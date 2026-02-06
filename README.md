@@ -446,6 +446,26 @@ cd pi-command-center
 </a>
 </td>
 </tr>
+<tr>
+<td align="center" width="33%">
+<a href="docs/diagrams/vpn_routing.png">
+<img src="docs/diagrams/vpn_routing.png" width="200"/><br/>
+<sub><b>VPN Split Routing</b></sub>
+</a>
+</td>
+<td align="center" width="33%">
+<a href="docs/diagrams/system_components.png">
+<img src="docs/diagrams/system_components.png" width="200"/><br/>
+<sub><b>System Components</b></sub>
+</a>
+</td>
+<td align="center" width="33%">
+<a href="docs/diagrams/network_flow.png">
+<img src="docs/diagrams/network_flow.png" width="200"/><br/>
+<sub><b>Network Flow</b></sub>
+</a>
+</td>
+</tr>
 </table>
 
 <br/>
