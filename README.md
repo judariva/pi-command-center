@@ -1,182 +1,151 @@
 <div align="center">
 
-<img src="docs/diagrams/logo_picommand.png" alt="Pi Command Center" width="180"/>
+<img src="docs/diagrams/logo.png" alt="Pi Command Center" width="120"/>
 
 # Pi Command Center
 
-**Privacy-first home network control center on Raspberry Pi**
+Transform your Raspberry Pi into a privacy-first home network control center
 
-<img src="docs/diagrams/banner_hero.png" alt="Banner" width="700"/>
+<img src="docs/diagrams/hero_banner.png" alt="Hero" width="100%"/>
 
-[![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-3B%2B%2F4%2F5-C51A4A?style=flat-square&logo=raspberry-pi)](https://www.raspberrypi.org/)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](requirements.txt)
 
-[Features](#features) • [Quick Start](#quick-start) • [Architecture](#architecture) • [Documentation](#documentation)
+[Installation](#installation) · [Features](#features) · [Architecture](#architecture) · [Documentation](#documentation)
 
 </div>
 
 ---
 
-## What It Does
+## Overview
 
-Transform a Raspberry Pi into a complete home network security solution:
+Pi Command Center provides complete control over your home network's DNS, security, and privacy. Deploy with one command on any Raspberry Pi.
 
-| Problem | Solution |
-|---------|----------|
-| ISP tracks all DNS queries | Private recursive DNS (Unbound) |
-| Ads on all devices | Network-wide blocking (Pi-hole) |
-| VPN slows everything | Smart split routing (domain-based) |
-| No network visibility | Device monitoring + alerts |
-| Complex management | Telegram bot control |
-
----
-
-## Features
-
-<div align="center">
-<img src="docs/diagrams/feature_cards.png" alt="Features" width="800"/>
-</div>
-
-### Ad Blocking
-- 1M+ domains blocked network-wide
-- Works on all devices (Smart TV, IoT, phones)
-- No apps to install
-
-### Private DNS
-- Recursive resolution via Unbound
-- Queries never leave your network
-- No Google/Cloudflare middleman
-
-### VPN Split Routing
-- Route only specific domains through VPN
-- Keep local services fast
-- Automatic failover
-
-### Telegram Control
-- Full network management from phone
-- Real-time alerts
-- No ports exposed
+| Capability | Implementation |
+|------------|----------------|
+| DNS Resolution | Unbound recursive resolver (no third-party DNS) |
+| Ad Blocking | Pi-hole with 1M+ blocked domains |
+| VPN Routing | WireGuard with domain-based split tunneling |
+| Remote Control | Telegram bot interface |
+| Security | UFW firewall + Fail2ban intrusion detection |
 
 ---
 
-## Quick Start
+## Installation
 
-### One-Command Install
+### Quick Start
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/judariva/pi-command-center/main/install.sh | bash
 ```
 
-### Manual Install
+### Manual
 
 ```bash
 git clone https://github.com/judariva/pi-command-center.git
 cd pi-command-center
 cp .env.example .env
-# Edit .env with your Telegram bot token
+# Configure your Telegram bot token in .env
 docker compose up -d
 ```
 
 ### Requirements
 
-- Raspberry Pi 3B+ / 4 / 5 (or any Debian/Ubuntu system)
-- Docker & Docker Compose
-- Telegram bot token ([create one](https://t.me/BotFather))
+- Raspberry Pi 3B+ or newer (ARM64)
+- Docker and Docker Compose
+- Telegram bot token from [@BotFather](https://t.me/BotFather)
+
+---
+
+## Features
+
+### Private DNS
+
+All DNS queries are resolved recursively through Unbound. Your browsing data never touches Google, Cloudflare, or any third-party DNS provider.
+
+### Network-Wide Ad Blocking
+
+Pi-hole blocks ads and trackers for every device on your network. No client-side configuration required.
+
+### Smart VPN Routing
+
+<div align="center">
+<img src="docs/diagrams/vpn_routing.png" alt="VPN Split Routing" width="700"/>
+</div>
+
+Route specific domains through VPN while keeping local traffic fast:
+
+```
+netflix.com     → VPN (geo-unlock)
+reddit.com      → VPN (privacy)
+google.com      → Direct (speed)
+local services  → Direct (no latency)
+```
+
+### Security Monitoring
+
+<div align="center">
+<img src="docs/diagrams/security_shield.png" alt="Security Layers" width="300"/>
+</div>
+
+- Automatic IP banning after failed SSH attempts
+- Real-time intrusion alerts via Telegram
+- Key-only SSH authentication
 
 ---
 
 ## Architecture
 
 <div align="center">
-<img src="docs/diagrams/network_visual.png" alt="Network Architecture" width="700"/>
+<img src="docs/diagrams/architecture_hero.png" alt="Architecture" width="700"/>
 </div>
 
-<details>
-<summary>📊 Technical Diagram</summary>
-
-<div align="center">
-<img src="docs/diagrams/network_architecture.png" alt="Network Architecture Technical" width="700"/>
-</div>
-
-</details>
-
-### DNS Flow
+### Component Overview
 
 ```
-Client → Pi-hole (DNS/DHCP) → Unbound (Recursive) → Root Servers
-                ↓
-         Ad blocking
-         (0.0.0.0)
+┌─────────────────────────────────────────────────────────┐
+│                    RASPBERRY PI                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │   Pi-hole   │→ │   Unbound   │→ │  Root Servers   │ │
+│  │  DNS/DHCP   │  │  Recursive  │  │                 │ │
+│  └─────────────┘  └─────────────┘  └─────────────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │  WireGuard  │  │   Fail2ban  │  │       UFW       │ │
+│  │     VPN     │  │     IDS     │  │    Firewall     │ │
+│  └─────────────┘  └─────────────┘  └─────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐│
+│  │              Telegram Bot (pibot)                   ││
+│  └─────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────┘
 ```
 
-### VPN Split Routing
+### Docker Stack
 
-<div align="center">
-<img src="docs/diagrams/vpn_split_routing.png" alt="VPN Split Routing" width="700"/>
-</div>
-
-Traffic is routed based on domain:
-- **VPN**: netflix.com, reddit.com (privacy/geo-unlock)
-- **Direct**: google.com, local services (speed)
-
----
-
-## Bot Interface
-
-<div align="center">
-<img src="docs/diagrams/bot_mockup.png" alt="Telegram Bot" width="350"/>
-</div>
-
-**Commands:**
-- `/start` - Main menu
-- `/status` - Quick status
-- `/vpn` - VPN control
-- `/devices` - Network scan
-
----
-
-## Security
-
-<div align="center">
-<img src="docs/diagrams/security_layers.png" alt="Security Layers" width="600"/>
-</div>
-
-- **UFW**: Firewall with strict rules
-- **Fail2ban**: Auto-ban after failed attempts
-- **SSH**: Key-only authentication
-- **Telegram**: Authorized users only
-
----
-
-## Docker Stack
-
-<div align="center">
-<img src="docs/diagrams/docker_stack.png" alt="Docker Stack" width="600"/>
-</div>
-
-| Container | Purpose | Port |
-|-----------|---------|------|
-| `unbound` | Recursive DNS | 5335 |
-| `pihole` | DNS + DHCP + Blocking | 53, 80 |
-| `pibot` | Telegram control | - |
+| Service | Port | Purpose |
+|---------|------|---------|
+| `unbound` | 5335 | Recursive DNS resolver |
+| `pihole` | 53, 80 | DNS server + ad blocking + DHCP |
+| `pibot` | - | Telegram control interface |
 
 ---
 
 ## Configuration
 
-All settings via environment variables:
+All settings are managed through environment variables:
 
 ```bash
-# .env
-TELEGRAM_BOT_TOKEN=your_token
+# Required
+TELEGRAM_BOT_TOKEN=your_token_here
 AUTHORIZED_USERS=123456789
-PIHOLE_PASSWORD=secure_password
+
+# Optional
 NETWORK_RANGE=192.168.1.0/24
+PIHOLE_PASSWORD=your_password
+TZ=UTC
 ```
 
-See [.env.example](.env.example) for all options.
+See [.env.example](.env.example) for all available options.
 
 ---
 
@@ -184,34 +153,31 @@ See [.env.example](.env.example) for all options.
 
 | Document | Description |
 |----------|-------------|
+| [Technical Specification](docs/TECHNICAL_SPEC.md) | Complete system architecture |
 | [Pi-hole Setup](docs/PIHOLE_SETUP.md) | DNS and DHCP configuration |
-| [VPN Setup](docs/VPN_SETUP.md) | WireGuard + split routing |
-| [Security](docs/SECURITY.md) | Hardening guide |
+| [VPN Setup](docs/VPN_SETUP.md) | WireGuard split routing |
 
 ---
 
-## Diagram Generation
+## Bot Commands
 
-Regenerate all diagrams from config:
+| Command | Description |
+|---------|-------------|
+| `/start` | Main menu |
+| `/status` | System status |
+| `/devices` | Network scan |
+| `/vpn` | VPN control |
 
-```bash
-cd docs/diagrams
-python generate.py        # All diagrams
-python generate.py --only network  # Specific diagram
-```
+---
 
-Edit `config.yaml` to modify diagram content.
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
-
----
-
-<div align="center">
-
-**[⬆ Back to top](#pi-command-center)**
-
-</div>
+MIT License. See [LICENSE](LICENSE) for details.
