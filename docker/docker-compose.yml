@@ -1,0 +1,52 @@
+version: "3"
+
+# Pi-hole + Unbound Docker Stack
+# DNS/DHCP/Ad-blocking with recursive DNS resolver
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    network_mode: host
+    environment:
+      TZ: 'Europe/Madrid'
+      WEBPASSWORD: '${PIHOLE_PASSWORD:-changeme}'
+      # Use Unbound as upstream DNS
+      PIHOLE_DNS_: '127.0.0.1#5335'
+      # DHCP Configuration
+      DHCP_ACTIVE: 'true'
+      DHCP_START: '192.168.0.100'
+      DHCP_END: '192.168.0.250'
+      DHCP_ROUTER: '192.168.0.1'
+      DHCP_LEASETIME: '24'
+      PIHOLE_DOMAIN: 'lan'
+      DNSMASQ_LISTENING: 'all'
+      # Web interface
+      VIRTUAL_HOST: 'pihole.local'
+      WEBTHEME: 'default-dark'
+    volumes:
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    depends_on:
+      - unbound
+    healthcheck:
+      test: ["CMD", "dig", "+short", "+norecurse", "@127.0.0.1", "pi.hole"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  unbound:
+    container_name: unbound
+    image: mvance/unbound:latest
+    network_mode: host
+    volumes:
+      - './unbound:/opt/unbound/etc/unbound:ro'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "drill", "@127.0.0.1", "-p", "5335", "cloudflare.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
