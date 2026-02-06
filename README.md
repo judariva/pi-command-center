@@ -1,8 +1,12 @@
 <div align="center">
 
+<img src="docs/diagrams/logo_picommand.png" alt="Pi Command Center" width="180"/>
+
 # Pi Command Center
 
 **Privacy-first home network control center on Raspberry Pi**
+
+<img src="docs/diagrams/banner_hero.png" alt="Banner" width="700"/>
 
 [![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-3B%2B%2F4%2F5-C51A4A?style=flat-square&logo=raspberry-pi)](https://www.raspberrypi.org/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
@@ -86,8 +90,17 @@ docker compose up -d
 ## Architecture
 
 <div align="center">
-<img src="docs/diagrams/network_architecture.png" alt="Network Architecture" width="700"/>
+<img src="docs/diagrams/network_visual.png" alt="Network Architecture" width="700"/>
 </div>
+
+<details>
+<summary>📊 Technical Diagram</summary>
+
+<div align="center">
+<img src="docs/diagrams/network_architecture.png" alt="Network Architecture Technical" width="700"/>
+</div>
+
+</details>
 
 ### DNS Flow
 
