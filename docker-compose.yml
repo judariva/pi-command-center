@@ -1,31 +1,60 @@
 version: "3.8"
 
-# ============================================================================
-# Pi Command Center - Complete Stack
-# ============================================================================
-# Deploy the entire privacy stack with one command:
-#   docker-compose up -d
-#
-# Requirements:
-#   - Raspberry Pi 3B+ or newer (ARM64 recommended)
-#   - Docker & Docker Compose installed
-#   - .env file configured (copy from .env.example)
-# ============================================================================
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                      PI COMMAND CENTER - DOCKER STACK                     ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  Deploy:    docker compose up -d                                          ║
+# ║  Logs:      docker compose logs -f                                        ║
+# ║  Update:    docker compose pull && docker compose up -d                   ║
+# ║  Stop:      docker compose down                                           ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 services:
-  # ==========================================================================
-  # Pi-hole: DNS Server, DHCP Server, Ad Blocker
-  # ==========================================================================
+  # ══════════════════════════════════════════════════════════════════════════
+  # UNBOUND - Recursive DNS Resolver (Privacy Layer)
+  # ══════════════════════════════════════════════════════════════════════════
+  # Resolves DNS directly with root servers - no Google/Cloudflare middleman
+  # ══════════════════════════════════════════════════════════════════════════
+  unbound:
+    container_name: unbound
+    image: mvance/unbound:latest
+    restart: unless-stopped
+    networks:
+      dns_network:
+        ipv4_address: 172.20.0.2
+    volumes:
+      - ./docker/unbound:/opt/unbound/etc/unbound:ro
+    healthcheck:
+      test: ["CMD", "drill", "@127.0.0.1", "-p", "5335", "cloudflare.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # PI-HOLE - DNS Server + DHCP + Ad Blocking
+  # ══════════════════════════════════════════════════════════════════════════
+  # Network-wide ad blocking, serves as DNS/DHCP for your network
+  # ══════════════════════════════════════════════════════════════════════════
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
+    restart: unless-stopped
     hostname: pihole
-    network_mode: host
+    domainname: lan
+    networks:
+      dns_network:
+        ipv4_address: 172.20.0.3
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"    # DHCP
+      - "80:80/tcp"    # Web admin
     environment:
       TZ: ${TZ:-Europe/Madrid}
       WEBPASSWORD: ${PIHOLE_PASSWORD:-changeme}
-      PIHOLE_DNS_: 127.0.0.1#5335
-      DHCP_ACTIVE: ${DHCP_ENABLED:-true}
+      PIHOLE_DNS_: "172.20.0.2#5335"  # Unbound
+      DHCP_ACTIVE: ${DHCP_ENABLED:-false}
       DHCP_START: ${DHCP_START:-192.168.0.100}
       DHCP_END: ${DHCP_END:-192.168.0.250}
       DHCP_ROUTER: ${GATEWAY:-192.168.0.1}
@@ -34,75 +63,95 @@ services:
       DNSMASQ_LISTENING: all
       WEBTHEME: default-dark
       FTLCONF_LOCAL_IPV4: ${PI_IP:-PI_IP_REDACTED}
+      VIRTUAL_HOST: pihole.local
     volumes:
       - pihole_config:/etc/pihole
       - pihole_dnsmasq:/etc/dnsmasq.d
     cap_add:
       - NET_ADMIN
-    restart: unless-stopped
     depends_on:
       unbound:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "dig", "+short", "@127.0.0.1", "pi.hole"]
+      test: ["CMD", "dig", "+short", "+norecurse", "@127.0.0.1", "pi.hole"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
 
-  # ==========================================================================
-  # Unbound: Recursive DNS Resolver (Privacy-first)
-  # ==========================================================================
-  unbound:
-    container_name: unbound
-    image: mvance/unbound:latest
-    hostname: unbound
-    network_mode: host
-    volumes:
-      - ./docker/unbound:/opt/unbound/etc/unbound:ro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "drill", "@127.0.0.1", "-p", "5335", "cloudflare.com"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ==========================================================================
-  # Pi Bot: Telegram Control Center
-  # ==========================================================================
+  # ══════════════════════════════════════════════════════════════════════════
+  # PIBOT - Telegram Control Center
+  # ══════════════════════════════════════════════════════════════════════════
+  # Full network control via Telegram - no apps, no open ports needed
+  # ══════════════════════════════════════════════════════════════════════════
   pibot:
     container_name: pibot
     build:
       context: .
       dockerfile: Dockerfile
-    image: pi-command-center/pibot:latest
-    hostname: pibot
-    network_mode: host
+    image: ghcr.io/judariva/pi-command-center:latest
+    restart: unless-stopped
+    network_mode: host  # Required for network scanning
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      AUTHORIZED_USERS: ${AUTHORIZED_USERS}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?Bot token required}
+      AUTHORIZED_USERS: ${AUTHORIZED_USERS:?User ID required}
       PIHOLE_API_URL: http://localhost/admin/api.php
       PIHOLE_API_KEY: ${PIHOLE_API_KEY:-}
       NETWORK_RANGE: ${NETWORK_RANGE:-192.168.0.0/24}
       TZ: ${TZ:-Europe/Madrid}
     volumes:
       - pibot_data:/app/data
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker control
+      - /etc/pihole:/etc/pihole:rw                     # VPN domains list
+    cap_add:
+      - NET_ADMIN      # Network scanning
+      - NET_RAW        # ARP scanning
     depends_on:
       pihole:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('https://api.telegram.org', timeout=5)"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('https://api.telegram.org', timeout=10)"]
       interval: 60s
       timeout: 15s
       retries: 3
       start_period: 30s
 
-# ============================================================================
-# Volumes
-# ============================================================================
+  # ══════════════════════════════════════════════════════════════════════════
+  # WIREGUARD - VPN Client (Optional)
+  # ══════════════════════════════════════════════════════════════════════════
+  # Uncomment to enable VPN split routing
+  # ══════════════════════════════════════════════════════════════════════════
+  # wireguard:
+  #   container_name: wireguard
+  #   image: linuxserver/wireguard:latest
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_MODULE
+  #   environment:
+  #     PUID: 1000
+  #     PGID: 1000
+  #     TZ: ${TZ:-Europe/Madrid}
+  #   volumes:
+  #     - ./wireguard:/config
+  #     - /lib/modules:/lib/modules:ro
+  #   sysctls:
+  #     - net.ipv4.conf.all.src_valid_mark=1
+
+# ══════════════════════════════════════════════════════════════════════════
+# NETWORKS
+# ══════════════════════════════════════════════════════════════════════════
+networks:
+  dns_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+# ══════════════════════════════════════════════════════════════════════════
+# VOLUMES
+# ══════════════════════════════════════════════════════════════════════════
 volumes:
   pihole_config:
     name: pihole_config
@@ -110,21 +159,3 @@ volumes:
     name: pihole_dnsmasq
   pibot_data:
     name: pibot_data
-
-# ============================================================================
-# Usage
-# ============================================================================
-# First time setup:
-#   1. cp .env.example .env
-#   2. Edit .env with your values (especially TELEGRAM_BOT_TOKEN)
-#   3. docker-compose up -d
-#
-# View logs:
-#   docker-compose logs -f
-#
-# Update all:
-#   docker-compose pull && docker-compose up -d
-#
-# Backup:
-#   docker run --rm -v pihole_config:/data -v $(pwd):/backup busybox tar czf /backup/pihole-backup.tar.gz /data
-# ============================================================================
