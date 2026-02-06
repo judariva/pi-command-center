@@ -61,11 +61,17 @@
 
 ## 🚀 Quick Start
 
-### One-Command Deploy (Coming Soon)
+### One-Command Deploy
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/judariva/pi-command-center/main/install.sh | bash
 ```
+
+The interactive installer will guide you through:
+- 🔧 System detection and Docker installation
+- 🤖 Telegram bot configuration
+- 🌐 Network and DHCP settings
+- 🔒 Security hardening options
 
 ### Manual Installation
 
@@ -208,7 +214,7 @@ flowchart TB
 
 ### Network Topology
 
-![Network Architecture](docs/diagrams/network_architecture.png)
+![Network Architecture](docs/diagrams/network_hq.png)
 
 ### System Components
 
@@ -257,7 +263,7 @@ graph TB
 
 ### VPN Split Routing Deep Dive
 
-![VPN Split Routing](docs/diagrams/vpn_split_routing.png)
+![VPN Split Routing](docs/diagrams/vpn_flow_hq.png)
 
 **How it works:**
 
