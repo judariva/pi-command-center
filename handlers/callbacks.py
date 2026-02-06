@@ -671,7 +671,7 @@ No se pudo obtener el estado."""
     elif data == "menu:tools":
         # Tests rápidos
         dns_out, _, dns_code = await run_async("dig +short google.com @127.0.0.1 -p 5335 2>/dev/null | head -1", timeout=3)
-        gw_out, _, _ = await run_async(f"ping -c 1 -W 1 {config.GATEWAY} 2>/dev/null | grep time= | awk -F'time=' '{print $2}'", timeout=3)
+        gw_out, _, _ = await run_async(f"ping -c 1 -W 1 {config.GATEWAY} 2>/dev/null | grep time= | awk -F'time=' '{{print $2}}'", timeout=3)
         inet_out, _, _ = await run_async("ping -c 1 -W 2 8.8.8.8 2>/dev/null | grep time= | awk -F'time=' '{print $2}'", timeout=4)
 
         dns_ok = "🟢" if dns_out and dns_code == 0 else "🔴"
