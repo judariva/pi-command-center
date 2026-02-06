@@ -1,0 +1,130 @@
+version: "3.8"
+
+# ============================================================================
+# Pi Command Center - Complete Stack
+# ============================================================================
+# Deploy the entire privacy stack with one command:
+#   docker-compose up -d
+#
+# Requirements:
+#   - Raspberry Pi 3B+ or newer (ARM64 recommended)
+#   - Docker & Docker Compose installed
+#   - .env file configured (copy from .env.example)
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # Pi-hole: DNS Server, DHCP Server, Ad Blocker
+  # ==========================================================================
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    hostname: pihole
+    network_mode: host
+    environment:
+      TZ: ${TZ:-Europe/Madrid}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-changeme}
+      PIHOLE_DNS_: 127.0.0.1#5335
+      DHCP_ACTIVE: ${DHCP_ENABLED:-true}
+      DHCP_START: ${DHCP_START:-192.168.0.100}
+      DHCP_END: ${DHCP_END:-192.168.0.250}
+      DHCP_ROUTER: ${GATEWAY:-192.168.0.1}
+      DHCP_LEASETIME: 24
+      PIHOLE_DOMAIN: lan
+      DNSMASQ_LISTENING: all
+      WEBTHEME: default-dark
+      FTLCONF_LOCAL_IPV4: ${PI_IP:-PI_IP_REDACTED}
+    volumes:
+      - pihole_config:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    depends_on:
+      unbound:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "dig", "+short", "@127.0.0.1", "pi.hole"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==========================================================================
+  # Unbound: Recursive DNS Resolver (Privacy-first)
+  # ==========================================================================
+  unbound:
+    container_name: unbound
+    image: mvance/unbound:latest
+    hostname: unbound
+    network_mode: host
+    volumes:
+      - ./docker/unbound:/opt/unbound/etc/unbound:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "drill", "@127.0.0.1", "-p", "5335", "cloudflare.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================================================
+  # Pi Bot: Telegram Control Center
+  # ==========================================================================
+  pibot:
+    container_name: pibot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pi-command-center/pibot:latest
+    hostname: pibot
+    network_mode: host
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      AUTHORIZED_USERS: ${AUTHORIZED_USERS}
+      PIHOLE_API_URL: http://localhost/admin/api.php
+      PIHOLE_API_KEY: ${PIHOLE_API_KEY:-}
+      NETWORK_RANGE: ${NETWORK_RANGE:-192.168.0.0/24}
+      TZ: ${TZ:-Europe/Madrid}
+    volumes:
+      - pibot_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    depends_on:
+      pihole:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('https://api.telegram.org', timeout=5)"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  pihole_config:
+    name: pihole_config
+  pihole_dnsmasq:
+    name: pihole_dnsmasq
+  pibot_data:
+    name: pibot_data
+
+# ============================================================================
+# Usage
+# ============================================================================
+# First time setup:
+#   1. cp .env.example .env
+#   2. Edit .env with your values (especially TELEGRAM_BOT_TOKEN)
+#   3. docker-compose up -d
+#
+# View logs:
+#   docker-compose logs -f
+#
+# Update all:
+#   docker-compose pull && docker-compose up -d
+#
+# Backup:
+#   docker run --rm -v pihole_config:/data -v $(pwd):/backup busybox tar czf /backup/pihole-backup.tar.gz /data
+# ============================================================================
