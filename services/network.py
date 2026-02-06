@@ -1644,8 +1644,8 @@ class NetworkService:
     async def check_connectivity(self) -> Dict[str, dict]:
         """Verifica conectividad."""
         targets = [
-            ("Router", "192.168.0.1"),
-            ("Pi-hole DNS", "PI_IP_REDACTED"),
+            ("Router", config.GATEWAY),
+            ("Pi-hole DNS", config.PI_IP),
             ("Google DNS", "8.8.8.8"),
             ("Cloudflare", "1.1.1.1"),
             ("Google", "google.com"),

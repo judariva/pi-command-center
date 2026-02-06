@@ -38,6 +38,9 @@ devices.json
 *.key
 *_private*
 *_secret*
+config.local.py
+.env.local
+.env.production
 
 # Build
 build/

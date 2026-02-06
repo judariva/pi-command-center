@@ -12,6 +12,45 @@
 
 ---
 
+## Table of Contents
+
+- [1. System Overview](#1-system-overview)
+  - [1.1 Purpose](#11-purpose)
+  - [1.2 Design Principles](#12-design-principles)
+  - [1.3 Target Hardware](#13-target-hardware)
+- [2. Architecture](#2-architecture)
+  - [2.1 Component Diagram](#21-component-diagram)
+  - [2.2 Network Topology](#22-network-topology)
+  - [2.3 Port Mapping](#23-port-mapping)
+- [3. Component Specifications](#3-component-specifications)
+  - [3.1 Pi-hole](#31-pi-hole)
+  - [3.2 Unbound](#32-unbound)
+  - [3.3 Telegram Bot (pibot)](#33-telegram-bot-pibot)
+  - [3.4 WireGuard VPN](#34-wireguard-vpn)
+- [4. Security Specification](#4-security-specification)
+  - [4.1 Defense Layers](#41-defense-layers)
+  - [4.2 SSH Hardening](#42-ssh-hardening)
+  - [4.3 Fail2ban Configuration](#43-fail2ban-configuration)
+- [5. Deployment](#5-deployment)
+  - [5.1 Prerequisites](#51-prerequisites)
+  - [5.2 Installation Steps](#52-installation-steps)
+  - [5.3 Environment Variables](#53-environment-variables)
+  - [5.4 Health Checks](#54-health-checks)
+- [6. Troubleshooting](#6-troubleshooting)
+  - [6.1 Common Issues](#61-common-issues)
+  - [6.2 Diagnostic Commands](#62-diagnostic-commands)
+- [7. Performance](#7-performance)
+  - [7.1 Resource Usage](#71-resource-usage-idle)
+  - [7.2 DNS Performance](#72-dns-performance)
+  - [7.3 Scaling Limits](#73-scaling-limits)
+- [8. API Reference](#8-api-reference)
+  - [8.1 Pi-hole API](#81-pi-hole-api)
+  - [8.2 Bot Commands](#82-bot-commands)
+- [9. Changelog](#9-changelog)
+- [10. References](#10-references)
+
+---
+
 ## 1. System Overview
 
 ### 1.1 Purpose
