@@ -26,7 +26,7 @@ Implementing VPN split routing using iptables mangle + fwmark + policy routing. 
 
 ```
 netflix.com → VPN (USA) 🇺🇸
-banking.es → Direct (Spain) 🇪🇸
+mybank.com → Direct (fast) 🏦
 ```
 
 **Stack:**
@@ -111,7 +111,7 @@ VPN split routing. Most VPNs are "all or nothing" - slow everything down. Mine r
 🔒 reddit.com → VPN (privacy)
 🔒 netflix.com → VPN (US content)
 ⚡ google.com → Direct (speed)
-⚡ banking.es → Direct (local access)
+⚡ mybank.com → Direct (local access)
 ```
 
 **Cost:** ~$50 one-time (Raspberry Pi)

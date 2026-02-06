@@ -1,0 +1,349 @@
+# Pi Command Center - Diagram Configuration
+# All diagrams are auto-generated from this config
+# No personal data - use generic placeholders
+
+metadata:
+  project: "Pi Command Center"
+  version: "1.0"
+  output_dir: "."
+  format: "png"  # png, svg, pdf
+
+# Network Architecture Diagram
+network:
+  title: "network_architecture"
+  direction: "TB"  # TB, LR, BT, RL
+
+  zones:
+    internet:
+      label: "Internet"
+      nodes:
+        - id: wan
+          type: internet
+          label: "WAN"
+
+    cloud:
+      label: "Cloud Services"
+      nodes:
+        - id: telegram_api
+          type: saas
+          label: "Telegram API"
+        - id: vpn_endpoint
+          type: server
+          label: "VPN Endpoint"
+
+    home:
+      label: "Home Network"
+      nodes:
+        - id: router
+          type: router
+          label: "Router"
+
+    raspberry:
+      label: "Raspberry Pi"
+      nodes:
+        - id: pihole
+          type: dns
+          label: "Pi-hole\nDNS + DHCP"
+        - id: unbound
+          type: dns
+          label: "Unbound\nRecursive"
+        - id: wireguard
+          type: vpn
+          label: "WireGuard"
+        - id: pibot
+          type: application
+          label: "Telegram Bot"
+        - id: firewall
+          type: firewall
+          label: "UFW + Fail2ban"
+
+    devices:
+      label: "LAN Devices"
+      nodes:
+        - id: clients
+          type: client
+          label: "Phones, PCs,\nSmart TV, IoT"
+
+  connections:
+    - from: clients
+      to: pihole
+      label: "DNS/DHCP"
+      color: "#27ae60"
+    - from: pihole
+      to: unbound
+      label: "5335"
+      color: "#3498db"
+    - from: unbound
+      to: wan
+      label: "Recursive"
+      style: "dashed"
+    - from: wireguard
+      to: vpn_endpoint
+      label: "Tunnel"
+      color: "#9b59b6"
+    - from: pibot
+      to: telegram_api
+      label: "Bot API"
+      color: "#0088cc"
+    - from: wan
+      to: firewall
+      label: "Filtered"
+      color: "#e74c3c"
+
+# VPN Split Routing Diagram
+vpn_routing:
+  title: "vpn_split_routing"
+  direction: "LR"
+
+  zones:
+    decision:
+      label: "Traffic Classification"
+      nodes:
+        - id: dns_query
+          type: dns
+          label: "DNS Query"
+        - id: iptables
+          type: firewall
+          label: "iptables\nmangle + fwmark"
+        - id: ipset
+          type: storage
+          label: "ipset\nVPN domains"
+
+    routing:
+      label: "Routing Decision"
+      nodes:
+        - id: vpn_route
+          type: vpn
+          label: "VPN Route\n(marked)"
+        - id: direct_route
+          type: internet
+          label: "Direct Route\n(default)"
+
+    destinations:
+      label: "Destinations"
+      nodes:
+        - id: vpn_server
+          type: server
+          label: "VPN Server"
+        - id: internet
+          type: internet
+          label: "Internet"
+
+  connections:
+    - from: dns_query
+      to: iptables
+      label: "Check"
+    - from: iptables
+      to: ipset
+      label: "Match?"
+    - from: ipset
+      to: vpn_route
+      label: "Yes: fwmark"
+      color: "#9b59b6"
+    - from: ipset
+      to: direct_route
+      label: "No: default"
+      color: "#27ae60"
+    - from: vpn_route
+      to: vpn_server
+      color: "#9b59b6"
+    - from: direct_route
+      to: internet
+      color: "#27ae60"
+
+# Security Layers Diagram
+security:
+  title: "security_layers"
+  direction: "TB"
+
+  zones:
+    external:
+      label: "External Threats"
+      nodes:
+        - id: attacker
+          type: hacker
+          label: "Attackers"
+        - id: scanners
+          type: scanner
+          label: "Port Scanners"
+
+    perimeter:
+      label: "Perimeter Defense"
+      nodes:
+        - id: ufw
+          type: firewall
+          label: "UFW Firewall"
+        - id: fail2ban
+          type: ids
+          label: "Fail2ban IDS"
+
+    application:
+      label: "Application Security"
+      nodes:
+        - id: ssh
+          type: key
+          label: "SSH Key-Only"
+        - id: auth
+          type: auth
+          label: "Telegram Auth"
+        - id: pihole_block
+          type: dns
+          label: "Malware Blocking"
+
+    monitoring:
+      label: "Monitoring"
+      nodes:
+        - id: alerts
+          type: notification
+          label: "Telegram Alerts"
+        - id: logs
+          type: logging
+          label: "Security Logs"
+
+  connections:
+    - from: attacker
+      to: ufw
+      label: "Blocked"
+      color: "#e74c3c"
+      style: "dashed"
+    - from: scanners
+      to: fail2ban
+      label: "Detected + Banned"
+      color: "#e74c3c"
+    - from: fail2ban
+      to: alerts
+      label: "Alert"
+      color: "#f39c12"
+    - from: ssh
+      to: logs
+      label: "Audit"
+    - from: pihole_block
+      to: logs
+      label: "Block log"
+
+# Bot Architecture Diagram
+bot:
+  title: "bot_architecture"
+  direction: "TB"
+
+  zones:
+    interface:
+      label: "User Interface"
+      nodes:
+        - id: telegram
+          type: saas
+          label: "Telegram"
+        - id: user
+          type: user
+          label: "Authorized User"
+
+    bot_core:
+      label: "Bot Core"
+      nodes:
+        - id: handlers
+          type: application
+          label: "Command Handlers"
+        - id: keyboards
+          type: application
+          label: "Menu System"
+        - id: auth_check
+          type: auth
+          label: "User Auth"
+
+    integrations:
+      label: "System Integrations"
+      nodes:
+        - id: pihole_api
+          type: api
+          label: "Pi-hole API"
+        - id: system_cmd
+          type: script
+          label: "System Commands"
+        - id: vpn_manager
+          type: script
+          label: "VPN Manager"
+        - id: security_tools
+          type: script
+          label: "Security Tools"
+
+  connections:
+    - from: user
+      to: telegram
+      label: "Commands"
+    - from: telegram
+      to: handlers
+      label: "Updates"
+      color: "#0088cc"
+    - from: handlers
+      to: auth_check
+      label: "Verify"
+    - from: handlers
+      to: keyboards
+      label: "Menus"
+    - from: handlers
+      to: pihole_api
+      color: "#27ae60"
+    - from: handlers
+      to: system_cmd
+      color: "#3498db"
+    - from: handlers
+      to: vpn_manager
+      color: "#9b59b6"
+    - from: handlers
+      to: security_tools
+      color: "#e74c3c"
+
+# Docker Stack Diagram
+docker:
+  title: "docker_stack"
+  direction: "LR"
+
+  zones:
+    network_external:
+      label: "External"
+      nodes:
+        - id: host_network
+          type: network
+          label: "Host Network\n(LAN)"
+
+    containers:
+      label: "Docker Containers"
+      nodes:
+        - id: unbound_c
+          type: container
+          label: "Unbound\n172.20.0.2"
+        - id: pihole_c
+          type: container
+          label: "Pi-hole\n172.20.0.3"
+        - id: pibot_c
+          type: container
+          label: "pibot\n(host network)"
+
+    volumes:
+      label: "Persistent Data"
+      nodes:
+        - id: pihole_data
+          type: volume
+          label: "pihole_config"
+        - id: pibot_data
+          type: volume
+          label: "pibot_data"
+
+  connections:
+    - from: host_network
+      to: pihole_c
+      label: "53/tcp+udp, 80/tcp"
+    - from: pihole_c
+      to: unbound_c
+      label: "5335"
+      color: "#3498db"
+    - from: pibot_c
+      to: host_network
+      label: "host mode"
+      style: "dashed"
+    - from: pihole_c
+      to: pihole_data
+      color: "#95a5a6"
+    - from: pibot_c
+      to: pibot_data
+      color: "#95a5a6"

@@ -141,7 +141,7 @@ flowchart LR
 - `netflix.com` → VPN (access US library)
 - `reddit.com` → VPN (privacy)
 - `google.com` → Direct (speed)
-- `banking.es` → Direct (local access required)
+- `mybank.com` → Direct (local access required)
 
 ### 📱 Telegram Control Center
 
@@ -152,7 +152,7 @@ Control your entire home network from your phone. No apps to install, no ports t
 │  🏠 Pi Command Center              │
 ├────────────────────────────────────┤
 │                                    │
-│  🌐 IP: 85.x.x.x (Spain)          │
+│  🌐 Public IP: 85.x.x.x           │
 │  🛡️ 1,247 ads blocked today       │
 │  📱 8 devices online               │
 │  🔐 VPN: Split Mode (15 domains)   │
@@ -214,7 +214,7 @@ flowchart TB
 
 ### Network Topology
 
-![Network Architecture](docs/diagrams/network_hq.png)
+![Network Architecture](docs/diagrams/network_architecture.png)
 
 ### System Components
 
@@ -263,7 +263,7 @@ graph TB
 
 ### VPN Split Routing Deep Dive
 
-![VPN Split Routing](docs/diagrams/vpn_flow_hq.png)
+![VPN Split Routing](docs/diagrams/vpn_split_routing.png)
 
 **How it works:**
 
